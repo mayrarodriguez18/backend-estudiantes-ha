@@ -1,65 +1,41 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  Param,
-  ParseIntPipe,
-  Post,
-  Put,
-} from '@nestjs/common';
+
+import { Controller } from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { EstudiantesService } from '../services/estudiantes.service';
 import { CreateEstudianteDto } from '../dto/estudiante.dto';
 
-@Controller('estudiantes')
+@Controller()
 export class EstudiantesController {
-  constructor(private readonly estudianteService: EstudiantesService) {}
+  constructor(private readonly estudiantesService: EstudiantesService) {}
 
-  @Get()
-  getAll() {
-    return this.estudianteService.getAll();
+  @MessagePattern({ cmd: 'create_student' }) 
+  create(@Payload() data: any) {
+    return this.estudiantesService.create(data);
   }
 
-  @Get(':id')
-  getOne(@Param('id', ParseIntPipe) id: number) {
-    return this.estudianteService.getOne(id);
+  @MessagePattern({ cmd: 'get_all_student' })
+  findAll() {
+  return this.estudiantesService.getAll();
   }
 
-  @Post()
-  async create(@Body() estudianteDto: CreateEstudianteDto) {
-    const estudiante = await this.estudianteService.create(estudianteDto);
-
-    const datos = {
-      data: estudiante,
-      message: 'Registro agregado con exito',
-    };
-
-    return datos;
+  @MessagePattern({ cmd: 'get_one_student' })
+  findOne(@Payload() data: { id: number }) {
+   return this.estudiantesService.getOne(data.id);
   }
 
-  @Put(':id')
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() estudianteDto: CreateEstudianteDto,
-  ) {
-    const estudiante = await this.estudianteService.update(id, estudianteDto);
-
-    const datos = {
-      data: estudiante,
-      message: 'Registro actualizado con exito',
-    };
-
-    return datos;
+  @MessagePattern({ cmd: 'update_student' })
+  update(@Payload() data: any) {
+    const { id, ...dto } = data;
+    return this.estudiantesService.update(id, dto);
   }
 
-  @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    const result = await this.estudianteService.remove(id);
-
-    const datos = {
-      message: 'Registro eliminado con exito',
-    };
-
-    return datos;
+  @MessagePattern({ cmd: 'remove_student' })
+  remove(@Payload() data: { id: number }) {
+    return this.estudiantesService.remove(data.id);
   }
+  
+  @MessagePattern('crear_estudiante')
+  crearEstudiante(@Payload() data: CreateEstudianteDto) {
+  return this.estudiantesService.create(data);
+}
 }

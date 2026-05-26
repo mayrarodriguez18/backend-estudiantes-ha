@@ -1,0 +1,41 @@
+# 1. Etapa de dependencias
+FROM node:22-alpine AS deps
+
+WORKDIR /usr/src/app
+
+# CORRECCIÓN: El nombre correcto es package-lock.json
+COPY package.json package-lock.json ./
+
+# Usamos npm ci para una instalación exacta y limpia
+RUN npm ci
+
+# 2. Etapa de construcción (Build)
+FROM node:22-alpine AS build
+
+WORKDIR /usr/src/app
+
+# Copiamos las dependencias de la etapa anterior
+COPY --from=deps /usr/src/app/node_modules ./node_modules
+COPY . .
+
+# Generamos el build de NestJS (u otro framework)
+RUN npm run build
+
+# Limpiamos node_modules e instalamos SOLO las de producción 
+# para que la imagen final sea más pequeña
+RUN rm -rf node_modules && npm ci --only=production && npm cache clean --force
+
+# 3. Etapa de producción
+FROM node:22-alpine AS prod 
+
+WORKDIR /usr/src/app
+
+# Copiamos solo lo necesario: las dependencias de PROD y el código compilado
+COPY --from=build /usr/src/app/node_modules ./node_modules
+COPY --from=build /usr/src/app/dist ./dist
+
+ENV NODE_ENV=production
+
+EXPOSE 3001
+
+CMD ["node", "dist/main.js"]

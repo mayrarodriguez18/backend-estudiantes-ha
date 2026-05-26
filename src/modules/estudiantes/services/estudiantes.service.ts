@@ -1,58 +1,74 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { Estudiante } from '../entities/estudiante.entity';
-import { Repository } from 'typeorm';
-import { CreateEstudianteDto } from '../dto/estudiante.dto';
+import { CreateEstudianteDto } from '../dto/estudiante.dto'; 
 
 @Injectable()
 export class EstudiantesService {
+  private readonly repository: Repository<Estudiante>;
+
   constructor(
-    @InjectRepository(Estudiante)
-    private readonly estudianteRepo: Repository<Estudiante>,
-  ) {}
-
-  getAll() {
-    return `Endpoint para getAll`;
+    @InjectDataSource() private readonly dataSource: DataSource,
+  ) {
+    // Definimos el repositorio una sola vez para no repetir código
+    this.repository = this.dataSource.getRepository(Estudiante);
   }
 
-  getOne(id: number) {
-    return `Esto retorna el id ${id}`;
+  async getAll() {
+    // Usamos el QueryBuilder para asegurar que los JOINS usen el esquema 'estudiantes'
+    return await this.repository
+      .createQueryBuilder('estudiante')
+      .orderBy('estudiante.id', 'ASC') // Ordenamos por ID para que la lista no salte
+      .getMany();
   }
 
-  async create(estudianteDto: CreateEstudianteDto) {
-    try {
-      const estudiante = this.estudianteRepo.create(estudianteDto);
+  async getOne(id: number) {
+    const estudiante = await this.repository
+      .createQueryBuilder('estudiante')
+      .where('estudiante.id = :id', { id })
+      .getOne();
 
-      return await this.estudianteRepo.save(estudiante);
-    } catch (error) {
-      console.log(error);
+    if (!estudiante) {
+      throw new NotFoundException(`Estudiante con ID ${id} no encontrado`);
     }
+    return estudiante;
   }
 
-  async update(id: number, estudianteDto: CreateEstudianteDto) {
-    try {
-      const estudiante = await this.estudianteRepo.preload({
-        id,
-        ...estudianteDto,
-      });
-      if (!estudiante) {
-        throw new NotFoundException(`Estudiante con ID ${id} no encontrado`);
-      }
-      return await this.estudianteRepo.save(estudiante);
-    } catch (error) {
-      console.log(error);
-    }
+  async create(createEstudianteDto: CreateEstudianteDto) {
+    // Creamos la instancia mapeando los IDs a objetos de relación
+    const nuevoEstudiante = this.repository.create({
+      nombres: createEstudianteDto.nombres,
+      paterno: createEstudianteDto.paterno,
+      materno: createEstudianteDto.materno,
+      direccion: createEstudianteDto.direccion,
+    });
+
+    return await this.repository.save(nuevoEstudiante);
+  }
+
+  async update(id: number, dto: CreateEstudianteDto) {
+    // Primero verificamos que exista
+    const estudiante = await this.getOne(id);
+
+    // Actualizamos los campos
+    const estudianteActualizado = this.repository.merge(estudiante, {
+      nombres: dto.nombres,
+      paterno: dto.paterno,
+      materno: dto.materno,
+      direccion: dto.direccion,
+    });
+
+    return await this.repository.save(estudianteActualizado);
   }
 
   async remove(id: number) {
-    try {
-      const result = await this.estudianteRepo.delete(id);
-      if (result.affected === 0) {
-        throw new NotFoundException(`Estudiante con ID ${id} no encontrado`);
-      }
-      return { message: `Estudiante con ID ${id} eliminado` };
-    } catch (error) {
-      console.log(error);
+    const result = await this.repository.delete(id);
+    
+    if (result.affected === 0) {
+      throw new NotFoundException(`No se pudo eliminar: Estudiante #${id} no existe`);
     }
+
+    return { deleted: true, message: `El estudiante #${id} ha sido eliminado` };
   }
 }
