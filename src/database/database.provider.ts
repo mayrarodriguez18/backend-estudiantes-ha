@@ -15,7 +15,7 @@ TypeOrmModule.forRootAsync({
     password: configService.get('PASSWORD_DATABASE'),
     database: configService.get('DATABASE'),
     entities: [],
-    autoLoadEntities: configService.get('AUTOLOADENTITIES'),
+    autoLoadEntities:true,
     synchronize: false,
   }),
  
