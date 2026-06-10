@@ -1,5 +1,5 @@
 # 1. Etapa de dependencias
-FROM  --platform=arm64 node:22-alpine AS deps
+FROM  --platform=linux/amd64 node:22-alpine AS deps
 
 WORKDIR /usr/src/app
 
@@ -10,7 +10,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # 2. Etapa de construcción (Build)
-FROM  --platform=arm64 node:22-alpine AS build
+FROM  --platform=linux/amd64 node:22-alpine AS build
 
 WORKDIR /usr/src/app 
 
@@ -26,7 +26,7 @@ RUN npm run build
 RUN rm -rf node_modules && npm ci --only=production && npm cache clean --force
 
 # 3. Etapa de producción
-FROM  --platform=arm64 node:22-alpine AS prod 
+FROM  --platform=linux/amd64 node:22-alpine AS prod 
 
 WORKDIR /usr/src/app
 
