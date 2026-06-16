@@ -36,7 +36,6 @@ export class EstudiantesService {
   }
 
   async create(createEstudianteDto: CreateEstudianteDto) {
-    // Creamos la instancia mapeando los IDs a objetos de relación
     const nuevoEstudiante = this.repository.create({
       nombres: createEstudianteDto.nombres,
       paterno: createEstudianteDto.paterno,
@@ -48,10 +47,8 @@ export class EstudiantesService {
   }
 
   async update(id: number, dto: CreateEstudianteDto) {
-    // Primero verificamos que exista
     const estudiante = await this.getOne(id);
 
-    // Actualizamos los campos
     const estudianteActualizado = this.repository.merge(estudiante, {
       nombres: dto.nombres,
       paterno: dto.paterno,

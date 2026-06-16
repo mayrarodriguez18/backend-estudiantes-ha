@@ -5,8 +5,8 @@ services:
       POSTGRES_PASSWORD: 12345678
       POSTGRES_USER: postgres
     ports:
-      - '5433:5433'
-    command: -p 5433
+      - '5432:5432'
+    command: -p 5432
   pgadmin:
     image: dpage/pgadmin4
     environment:
