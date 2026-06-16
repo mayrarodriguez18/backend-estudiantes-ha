@@ -1,11 +1,11 @@
-useFactory: (configService: ConfigService) => {
-  console.log('HOST:', configService.get('HOST'));
-  console.log('PORT_DB:', configService.get('PORT_DB'));
-  console.log('USERNAME_DB:', configService.get('USERNAME_DB'));
-  console.log('PASSWORD_DB:', configService.get('PASSWORD_DB'));
-  console.log('DATABASE:', configService.get('DATABASE'));
+import { DynamicModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
-  return {
+export const DatabaseProvider: DynamicModule = TypeOrmModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) => ({
     type: 'postgres',
     host: configService.get('HOST'),
     port: +configService.get('PORT_DB'),
@@ -15,5 +15,5 @@ useFactory: (configService: ConfigService) => {
     entities: [],
     autoLoadEntities: true,
     synchronize: false,
-  };
-}
+  }),
+});
