@@ -10,7 +10,7 @@ export const DatabaseProvider: DynamicModule = TypeOrmModule.forRootAsync({
     host: configService.get('HOST'),
     port: +configService.get('PORT_DB'),
     username: configService.get('USERNAME_DB'),
-    password: configService.get('PASSWORD_DB'),
+    password: configService.get('PASSWORD_DATABASE'),
     database: configService.get('DATABASE'),
     entities: [],
     autoLoadEntities: true,
